@@ -39,6 +39,7 @@
 ****************************************************************************/
 
 #include "openglwindow.h"
+#include <cstdlib>
 
 #include <QtGui/QGuiApplication>
 #include <QtGui/QMatrix4x4>
@@ -150,27 +151,75 @@ void TriangleWindow::render()
 
     m_program->setUniformValue(m_matrixUniform, matrix);
 
-    GLfloat vertices[] = {
-        0.0f, 0.707f,
-        -0.5f, -0.5f,
-        0.5f, -0.5f
-    };
+    int nbPointsLargeur = 16;
+    int nbPointsHauteur = 16;
 
-    GLfloat colors[] = {
-        1.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 1.0f
-    };
+    // Version Points X/Y (pas de Z)
+    /*GLfloat points[nbPointsLargeur][nbPointsHauteur][2];
+    for (int i = 0; i < nbPointsLargeur; i++) {
+        for (int j = 0; j < nbPointsHauteur; j++) {
+            points[i][j][0] = (2.*i)/(1.*nbPointsLargeur-1) -1.;
+            points[i][j][1] = (2.*j)/(1.*nbPointsHauteur-1) -1.;
+        }
+    }
+
+    GLfloat vertices[nbPointsLargeur*nbPointsHauteur*2*2];
+
+    for (int j = 0; j < nbPointsHauteur-1; j++) {
+        for (int i = 0; i < nbPointsLargeur; i++) {
+            vertices[4*nbPointsLargeur*j+4*i] = points[i][j][0];
+            vertices[4*nbPointsLargeur*j+4*i+1] = points[i][j][1];
+
+            vertices[4*nbPointsLargeur*j+4*i+2] = points[i][j+1][0];
+            vertices[4*nbPointsLargeur*j+4*i+3] = points[i][j+1][1];
+        }
+    }
 
     glVertexAttribPointer(m_posAttr, 2, GL_FLOAT, GL_FALSE, 0, vertices);
-    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, colors);
 
     glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    for (int j = 0; j < nbPointsHauteur-1; j++) {
+        glDrawArrays(GL_LINE_STRIP, j*nbPointsLargeur*2, nbPointsLargeur*2);
+    }*/
 
-    glDisableVertexAttribArray(1);
+
+    // A bouger dans ailleurs que dans render() !!!!
+
+    GLfloat points[nbPointsLargeur][nbPointsHauteur][3];
+    for (int i = 0; i < nbPointsLargeur; i++) {
+        for (int j = 0; j < nbPointsHauteur; j++) {
+            points[i][j][0] = (2.*i)/(1.*nbPointsLargeur-1) -1.;
+            points[i][j][1] = (2.*j)/(1.*nbPointsHauteur-1) -1.;
+            //points[i][j][2] = ((rand()%10)/10.0)-0.5;
+			points[i][j][2] = 0.0;
+        }
+    }
+
+
+
+    GLfloat vertices[nbPointsLargeur*nbPointsHauteur*2*3];
+
+    for (int j = 0; j < nbPointsHauteur-1; j++) {
+        for (int i = 0; i < nbPointsLargeur; i++) {
+            vertices[6*nbPointsLargeur*j+6*i] = points[i][j][0];
+            vertices[6*nbPointsLargeur*j+6*i+1] = points[i][j][1];
+            vertices[6*nbPointsLargeur*j+6*i+2] = points[i][j][2];
+
+            vertices[6*nbPointsLargeur*j+6*i+3] = points[i][j+1][0];
+            vertices[6*nbPointsLargeur*j+6*i+4] = points[i][j+1][1];
+            vertices[6*nbPointsLargeur*j+6*i+5] = points[i][j+1][2];
+        }
+    }
+
+    glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, vertices);
+
+    glEnableVertexAttribArray(0);
+
+    for (int j = 0; j < nbPointsHauteur-1; j++) {
+        glDrawArrays(GL_LINE_STRIP, j*nbPointsLargeur*2, nbPointsLargeur*2);
+    }
+
     glDisableVertexAttribArray(0);
 
     m_program->release();
