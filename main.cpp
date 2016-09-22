@@ -38,6 +38,7 @@
 **
 ****************************************************************************/
 
+#include "ImageBase.h"
 #include "openglwindow.h"
 #include <cstdlib>
 
@@ -59,6 +60,7 @@ public:
 
 private:
     GLuint loadShader(GLenum type, const char *source);
+    void createMatrix();
 
     GLuint m_posAttr;
     GLuint m_colAttr;
@@ -66,6 +68,9 @@ private:
 
     QOpenGLShaderProgram *m_program;
     int m_frame;
+
+    int nbPointsLargeur = 16;
+    int nbPointsHauteur = 16;
 };
 
 TriangleWindow::TriangleWindow()
@@ -131,8 +136,40 @@ void TriangleWindow::initialize()
     m_posAttr = m_program->attributeLocation("posAttr");
     m_colAttr = m_program->attributeLocation("colAttr");
     m_matrixUniform = m_program->uniformLocation("matrix");
+
+    createMatrix();
 }
 //! [4]
+
+void TriangleWindow::createMatrix() {
+
+    ImageBase imIn;
+    imIn.load("heightmap-1.ppm");
+
+    GLfloat points[nbPointsLargeur][nbPointsHauteur][2];
+    for (int i = 0; i < nbPointsLargeur; i++) {
+        for (int j = 0; j < nbPointsHauteur; j++) {
+            points[i][j][0] = (2.*i)/(1.*nbPointsLargeur-1) -1.;
+            points[i][j][1] = (2.*j)/(1.*nbPointsHauteur-1) -1.;
+            points[i][j][2] = imIn[i][j]/255.;
+        }
+    }
+
+    GLfloat vertices[nbPointsLargeur*nbPointsHauteur*2*2];
+    for (int j = 0; j < nbPointsHauteur-1; j++) {
+        for (int i = 0; i < nbPointsLargeur; i++) {
+            vertices[6*nbPointsLargeur*j+6*i] = points[i][j][0];
+            vertices[6*nbPointsLargeur*j+6*i+1] = points[i][j][1];
+            vertices[6*nbPointsLargeur*j+6*i+2] = points[i][j][2];
+
+            vertices[6*nbPointsLargeur*j+6*i+3] = points[i][j+1][0];
+            vertices[6*nbPointsLargeur*j+6*i+4] = points[i][j+1][1];
+            vertices[6*nbPointsLargeur*j+6*i+5] = points[i][j+1][2];
+        }
+    }
+
+    glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, vertices);
+}
 
 //! [5]
 void TriangleWindow::render()
@@ -150,69 +187,6 @@ void TriangleWindow::render()
     matrix.rotate(100.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
 
     m_program->setUniformValue(m_matrixUniform, matrix);
-
-    int nbPointsLargeur = 16;
-    int nbPointsHauteur = 16;
-
-    // Version Points X/Y (pas de Z)
-    /*GLfloat points[nbPointsLargeur][nbPointsHauteur][2];
-    for (int i = 0; i < nbPointsLargeur; i++) {
-        for (int j = 0; j < nbPointsHauteur; j++) {
-            points[i][j][0] = (2.*i)/(1.*nbPointsLargeur-1) -1.;
-            points[i][j][1] = (2.*j)/(1.*nbPointsHauteur-1) -1.;
-        }
-    }
-
-    GLfloat vertices[nbPointsLargeur*nbPointsHauteur*2*2];
-
-    for (int j = 0; j < nbPointsHauteur-1; j++) {
-        for (int i = 0; i < nbPointsLargeur; i++) {
-            vertices[4*nbPointsLargeur*j+4*i] = points[i][j][0];
-            vertices[4*nbPointsLargeur*j+4*i+1] = points[i][j][1];
-
-            vertices[4*nbPointsLargeur*j+4*i+2] = points[i][j+1][0];
-            vertices[4*nbPointsLargeur*j+4*i+3] = points[i][j+1][1];
-        }
-    }
-
-    glVertexAttribPointer(m_posAttr, 2, GL_FLOAT, GL_FALSE, 0, vertices);
-
-    glEnableVertexAttribArray(0);
-
-    for (int j = 0; j < nbPointsHauteur-1; j++) {
-        glDrawArrays(GL_LINE_STRIP, j*nbPointsLargeur*2, nbPointsLargeur*2);
-    }*/
-
-
-    // A bouger dans ailleurs que dans render() !!!!
-
-    GLfloat points[nbPointsLargeur][nbPointsHauteur][3];
-    for (int i = 0; i < nbPointsLargeur; i++) {
-        for (int j = 0; j < nbPointsHauteur; j++) {
-            points[i][j][0] = (2.*i)/(1.*nbPointsLargeur-1) -1.;
-            points[i][j][1] = (2.*j)/(1.*nbPointsHauteur-1) -1.;
-            //points[i][j][2] = ((rand()%10)/10.0)-0.5;
-			points[i][j][2] = 0.0;
-        }
-    }
-
-
-
-    GLfloat vertices[nbPointsLargeur*nbPointsHauteur*2*3];
-
-    for (int j = 0; j < nbPointsHauteur-1; j++) {
-        for (int i = 0; i < nbPointsLargeur; i++) {
-            vertices[6*nbPointsLargeur*j+6*i] = points[i][j][0];
-            vertices[6*nbPointsLargeur*j+6*i+1] = points[i][j][1];
-            vertices[6*nbPointsLargeur*j+6*i+2] = points[i][j][2];
-
-            vertices[6*nbPointsLargeur*j+6*i+3] = points[i][j+1][0];
-            vertices[6*nbPointsLargeur*j+6*i+4] = points[i][j+1][1];
-            vertices[6*nbPointsLargeur*j+6*i+5] = points[i][j+1][2];
-        }
-    }
-
-    glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, vertices);
 
     glEnableVertexAttribArray(0);
 
