@@ -38,7 +38,6 @@
 **
 ****************************************************************************/
 
-#include "ImageBase.h"
 #include "openglwindow.h"
 #include <cstdlib>
 
@@ -48,6 +47,8 @@
 #include <QtGui/QScreen>
 
 #include <QtCore/qmath.h>
+
+#include <QColor>
 
 //! [1]
 class TriangleWindow : public OpenGLWindow
@@ -69,8 +70,8 @@ private:
     QOpenGLShaderProgram *m_program;
     int m_frame;
 
-    int nbPointsLargeur = 16;
-    int nbPointsHauteur = 16;
+    int nbPointsLargeur = 240;
+    int nbPointsHauteur = 240;
 };
 
 TriangleWindow::TriangleWindow()
@@ -143,19 +144,22 @@ void TriangleWindow::initialize()
 
 void TriangleWindow::createMatrix() {
 
-    ImageBase imIn;
-    imIn.load("heightmap-1.ppm");
+    QImage heightmap(":/images/heightmap-1.png");
 
-    GLfloat points[nbPointsLargeur][nbPointsHauteur][2];
+    GLfloat points[nbPointsLargeur][nbPointsHauteur][3];
     for (int i = 0; i < nbPointsLargeur; i++) {
         for (int j = 0; j < nbPointsHauteur; j++) {
             points[i][j][0] = (2.*i)/(1.*nbPointsLargeur-1) -1.;
             points[i][j][1] = (2.*j)/(1.*nbPointsHauteur-1) -1.;
-            points[i][j][2] = imIn[i][j]/255.;
+            //points[i][j][2] = 0.0;
+            QColor color;
+            color=heightmap.pixel(i,j);
+            qreal grey = color.blackF() - 0.5;
+            points[i][j][2] = grey;
         }
     }
 
-    GLfloat vertices[nbPointsLargeur*nbPointsHauteur*2*2];
+    GLfloat vertices[nbPointsLargeur*nbPointsHauteur*2*3];
     for (int j = 0; j < nbPointsHauteur-1; j++) {
         for (int i = 0; i < nbPointsLargeur; i++) {
             vertices[6*nbPointsLargeur*j+6*i] = points[i][j][0];
