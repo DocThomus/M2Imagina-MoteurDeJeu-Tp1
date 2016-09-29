@@ -49,6 +49,8 @@
 #include <QtCore/qmath.h>
 
 #include <QColor>
+#include <QMouseEvent>
+#include <QKeyEvent>
 
 //! [1]
 class TriangleWindow : public OpenGLWindow
@@ -58,6 +60,7 @@ public:
 
     void initialize() Q_DECL_OVERRIDE;
     void render() Q_DECL_OVERRIDE;
+    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
 private:
     GLuint loadShader(GLenum type, const char *source);
@@ -69,6 +72,17 @@ private:
 
     QOpenGLShaderProgram *m_program;
     int m_frame;
+
+    bool autorotate = true;
+    bool drawMode = true;
+
+    float trX = 0.;
+    float trY = 0.;
+    float trZ = -2.;
+
+    float rtX = 0.;
+    float rtY = 0.;
+    float rtZ = 0.;
 
     int nbPointsLargeur = 240;
     int nbPointsHauteur = 240;
@@ -152,8 +166,7 @@ void TriangleWindow::createMatrix() {
             points[i][j][0] = (2.*i)/(1.*nbPointsLargeur-1) -1.;
             points[i][j][1] = (2.*j)/(1.*nbPointsHauteur-1) -1.;
             //points[i][j][2] = 0.0;
-            QColor color;
-            color=heightmap.pixel(i,j);
+            QColor color = heightmap.pixel(i,j);
             qreal grey = color.blackF() - 0.5;
             points[i][j][2] = grey;
         }
@@ -187,15 +200,25 @@ void TriangleWindow::render()
 
     QMatrix4x4 matrix;
     matrix.perspective(60.0f, 16.0f/9.0f, 0.1f, 100.0f);
-    matrix.translate(0, 0, -2);
-    matrix.rotate(100.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
+    matrix.translate(trX,trY,trZ);
+    if (autorotate) {
+        matrix.rotate(20.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
+    } else {
+        matrix.rotate(rtX, 1, 0, 0);
+        matrix.rotate(rtY, 0, 1, 0);
+        matrix.rotate(rtZ, 0, 0, 1);
+    }
 
     m_program->setUniformValue(m_matrixUniform, matrix);
 
     glEnableVertexAttribArray(0);
 
     for (int j = 0; j < nbPointsHauteur-1; j++) {
-        glDrawArrays(GL_LINE_STRIP, j*nbPointsLargeur*2, nbPointsLargeur*2);
+        if (drawMode) {
+            glDrawArrays(GL_LINE_STRIP, j*nbPointsLargeur*2, nbPointsLargeur*2);
+        } else {
+            glDrawArrays(GL_TRIANGLE_STRIP, j*nbPointsLargeur*2, nbPointsLargeur*2);
+        }
     }
 
     glDisableVertexAttribArray(0);
@@ -205,3 +228,53 @@ void TriangleWindow::render()
     ++m_frame;
 }
 //! [5]
+
+void TriangleWindow::keyPressEvent(QKeyEvent *event)
+{
+    switch(event->key())
+    {
+    case 'Z':
+        trY -= 0.10f;
+        break;
+    case 'S':
+        trY += 0.10f;
+        break;
+    case 'Q':
+        trX += 0.10f;
+        break;
+    case 'D':
+        trX -= 0.10f;
+        break;
+    case 'X':
+        trZ += 0.10f;
+        break;
+    case 'W':
+        trZ -= 0.10f;
+        break;
+    case 'T':
+        rtX -= 1.f;
+        break;
+    case 'G':
+        rtX += 1.f;
+        break;
+    case 'F':
+        rtY -= 1.f;
+        break;
+    case 'H':
+        rtY += 1.f;
+        break;
+    case 'R':
+        rtZ -= 1.f;
+        break;
+    case 'Y':
+        rtZ += 1.f;
+        break;
+    case 'L':
+        autorotate = !autorotate;
+        break;
+    case 'M':
+        drawMode = !drawMode;
+        break;
+    }
+    render();
+}
